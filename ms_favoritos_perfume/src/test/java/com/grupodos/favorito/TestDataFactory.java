@@ -4,6 +4,7 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 
 import com.grupodos.favorito.dto.PerfumeDTO;
+import com.grupodos.favorito.dto.UsuarioDTO;
 
 import net.datafaker.Faker;
 
@@ -23,6 +24,15 @@ public class TestDataFactory {
     
     return dto;
 }
-
+    public static UsuarioDTO unUsuarioDTO() {
+    UsuarioDTO dto = new UsuarioDTO();
+    
+    dto.setId(faker.number().numberBetween(1L, 999L));
+    dto.setNombre(faker.name().fullName()); // Nombre completo es más realista que username
+    dto.setEmail(faker.internet().emailAddress());
+    dto.setActivo(true); // creamos usuarios activos para las pruebas
+    
+    return dto;
+}
 
 }
