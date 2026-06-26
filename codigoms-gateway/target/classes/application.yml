@@ -1,0 +1,28 @@
+spring:
+  application:
+    name: codigoms-gateway
+  cloud:
+    gateway:
+      routes:
+
+        
+        # codigoms-catalogo → puerto 8083
+        - id: catalogo-route
+          uri: http://localhost:8083
+          predicates:
+            - Path=/api/perfumes/**
+server:
+  port: 8080
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health, info, gateway
+  endpoint:
+    gateway:
+      enabled: true
+
+logging:
+  level:
+    org.springframework.cloud.gateway: INFO
