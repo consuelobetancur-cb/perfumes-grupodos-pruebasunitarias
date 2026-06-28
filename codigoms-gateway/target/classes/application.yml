@@ -4,13 +4,22 @@ spring:
   cloud:
     gateway:
       routes:
-
         
-        # codigoms-catalogo → puerto 8083
+        
+        # bd_carritos → puerto 8081
+        - id: carrito-route
+          uri: http://localhost:8081
+          predicates:
+            - Path=/api/carritos/**
+
+        # catalogo_db → puerto 8082
         - id: catalogo-route
           uri: http://localhost:8083
           predicates:
             - Path=/api/perfumes/**
+        
+
+
 server:
   port: 8080
 
