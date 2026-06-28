@@ -30,4 +30,6 @@ public class Favorito {
 
     @Column(nullable = false)
     private LocalDateTime fechaAgregado= LocalDateTime.now();;
+
+    
 }

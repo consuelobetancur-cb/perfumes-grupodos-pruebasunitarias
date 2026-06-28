@@ -3,8 +3,10 @@ package com.grupodos.favorito;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 
+import com.grupodos.favorito.dto.FavoritoRequestDTO;
 import com.grupodos.favorito.dto.PerfumeDTO;
 import com.grupodos.favorito.dto.UsuarioDTO;
+import com.grupodos.favorito.model.Favorito;
 
 import net.datafaker.Faker;
 
@@ -34,5 +36,19 @@ public class TestDataFactory {
     
     return dto;
 }
+    public static FavoritoRequestDTO unFavoritoRequest(Long perfumeId, String usuarioNombre) {
+        FavoritoRequestDTO request = new FavoritoRequestDTO();
+        request.setPerfumeId(perfumeId);
+        request.setUsuario(usuarioNombre);
+        return request;
+    }
+
+    public static Favorito unFavorito(Long perfumeId, String nombrePerfume, String usuario) {
+        Favorito favorito = new Favorito();
+        favorito.setPerfumeId(perfumeId);
+        favorito.setNombrePerfume(nombrePerfume);
+        favorito.setUsuario(usuario);
+        return favorito;
+    }
 
 }
