@@ -6,6 +6,7 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import java.util.List;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.*;
@@ -139,4 +140,83 @@ class FavoritoServiceTest {
 
         verify(favoritorepository, never()).save(any());
     }
+
+    @Test
+    @DisplayName("listarTodos: retorna todos los favoritos como DTO")
+    void listarTodos_retornaListaCompleta() {
+
+        PerfumeDTO p1 = TestDataFactory.unPerfumeDTO();
+        PerfumeDTO p2 = TestDataFactory.unPerfumeDTO(); 
+        p2.setNombre("Otro Perfume");
+        p2.setId(2L);
+        
+        Favorito f1 = TestDataFactory.unFavorito(p1.getId(), p1.getNombre(), "juan");
+        Favorito f2 = TestDataFactory.unFavorito(p2.getId(), p2.getNombre(), "maria");
+        
+        when(favoritorepository.findAll()).thenReturn(List.of(f1, f2));
+
+        List<FavoritoResponseDTO> resultado = Favoritoservice.listarTodos();
+
+        assertThat(resultado).hasSize(2);
+        assertThat(resultado).extracting(FavoritoResponseDTO::getUsuario)
+                .containsExactly("juan", "maria");
+
+        verify(favoritorepository).findAll();
+    }
+
+    @Test
+    @DisplayName("listarPorUsuario: retorna solo los favoritos del usuario indicado")
+    void listarPorUsuario_retornaFavoritosDelUsuario() {
+
+        PerfumeDTO p1 = TestDataFactory.unPerfumeDTO();
+
+        PerfumeDTO p2 = new PerfumeDTO();
+        p2.setId(2L);
+        p2.setNombre("Bleu de Chanel");
+
+        PerfumeDTO p3 = new PerfumeDTO();
+        p3.setId(3L);
+        p3.setNombre("Dior Sauvage");
+
+        Favorito f1 = TestDataFactory.unFavorito(p1.getId(), p1.getNombre(), "juan");
+        Favorito f2 = TestDataFactory.unFavorito(p2.getId(), p2.getNombre(), "juan");
+        Favorito f3 = TestDataFactory.unFavorito(p3.getId(), p3.getNombre(), "juan");
+
+        when(favoritorepository.findByUsuario("juan")).thenReturn(List.of(f1, f2, f3));
+
+        List<FavoritoResponseDTO> resultado = Favoritoservice.listarPorUsuario("juan");
+
+        assertThat(resultado).hasSize(3);
+        assertThat(resultado).allMatch(f -> f.getUsuario().equals("juan"));
+   
+        verify(favoritorepository).findByUsuario("juan");
+    }
+
+    @Test
+    @DisplayName("eliminar: elimina el favorito cuando el id existe")
+    void eliminar_favoritoExistente_llamaDelete() {
+        PerfumeDTO p1 = TestDataFactory.unPerfumeDTO();
+        Favorito favorito = TestDataFactory.unFavorito(p1.getId(), p1.getNombre(), "juan");
+        
+        when(favoritorepository.findById(favorito.getId()))
+                .thenReturn(Optional.of(favorito));
+
+        Favoritoservice.eliminar(favorito.getId());
+
+        verify(favoritorepository).findById(favorito.getId());
+        verify(favoritorepository).delete(favorito);
+    }
+
+     @Test
+     @DisplayName("eliminar: lanza excepcion cuando el id no existe")
+     void eliminar_favoritoNoExiste_lanzaExcepcion() {
+    
+    when(favoritorepository.findById(999L)).thenReturn(Optional.empty());
+
+    assertThatThrownBy(() -> Favoritoservice.eliminar(999L))
+            .isInstanceOf(RuntimeException.class)
+            .hasMessageContaining("no encontrado");
+
+    verify(favoritorepository, never()).delete(any());
+}
 }
