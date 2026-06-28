@@ -12,11 +12,11 @@
         <relativePath/>
     </parent>
 
-    <groupId>com.sting</groupId>
+    <groupId>com.grupodos</groupId>
     <artifactId>codigoms-gateway</artifactId>
     <version>1.0.0</version>
     <name>codigoms-gateway</name>
-    <description>API Gateway - punto de entrada unico para los microservicios del curso EV3</description>
+    <description>API Gateway - punto de entrada unico para los microservicios </description>
 
     <properties>
         <java.version>21</java.version>
