@@ -114,7 +114,29 @@ class FavoritoServiceTest {
         .isInstanceOf(RuntimeException.class)
         .hasMessageContaining("no existe en el catálogo");
 
-        
         verify(favoritorepository, never()).save(any(Favorito.class));
+    }
+
+    @Test
+    @DisplayName("agregar: lanza excepcion cuando el usuario ya tiene ese perfume en favoritos")
+    void agregar_favoritoDuplicado_lanzaExcepcion() {
+        PerfumeDTO perfume = TestDataFactory.unPerfumeDTO();
+        UsuarioDTO usuario = TestDataFactory.unUsuarioDTO();
+        FavoritoRequestDTO request = TestDataFactory.unFavoritoRequest(
+                perfume.getId(), usuario.getNombre());
+
+        when(usuariosClient.buscarPorNombre(usuario.getNombre()))
+                .thenReturn(Optional.of(usuario));
+        when(catalogoClient.buscarPerfume(perfume.getId()))
+                .thenReturn(Optional.of(perfume));
+        
+        when(favoritorepository.existsByUsuarioAndPerfumeId(usuario.getNombre(), perfume.getId()))
+        .thenReturn(true);
+        
+        assertThatThrownBy(() -> Favoritoservice.agregar(request))
+        .isInstanceOf(RuntimeException.class)
+        .hasMessageContaining("ya tiene este perfume en favoritos"); 
+
+        verify(favoritorepository, never()).save(any());
     }
 }
