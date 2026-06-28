@@ -44,4 +44,9 @@ public class TestDataFactory {
         return BigDecimal.valueOf(faker.number().randomDouble(2, 10000, 200000))
                 .setScale(2, RoundingMode.HALF_UP);
     }
+
+    public static Perfume unPerfumeSinCategoria() {
+    // definimos Perfume donde la categoría es null
+    return new Perfume(1L, "Perfume Nulo", "Marca Test", new BigDecimal("50.00"), 10, null);
+}
 }

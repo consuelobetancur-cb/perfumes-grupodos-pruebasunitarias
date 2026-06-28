@@ -158,4 +158,7 @@ class PerfumeServiceTest {
         // Verificamos opcionalmente que la categoría sea la correcta
         assertThat(resultado.get(0).getCategoriaNombre()).isEqualTo("Floral");
     }
+
+
+
 }

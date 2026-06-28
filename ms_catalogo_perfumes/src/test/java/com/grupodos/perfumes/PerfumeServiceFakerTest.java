@@ -1,6 +1,7 @@
 package com.grupodos.perfumes;
 
 import static org.assertj.core.api.Assertions.assertThat;
+
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 
@@ -80,4 +81,6 @@ class PerfumeServiceFakerTest {
         assertThat(resultado).allMatch(dto -> dto.getPrecio().signum() > 0);
         assertThat(resultado).allMatch(dto -> dto.getStock() > 0);
     }
+
+    
 }
