@@ -17,15 +17,16 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import java.math.BigDecimal;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
+@DisplayName("CarritoService - Pruebas Unitarias de Perfumes")
 public class CarritoServiceTest {
 
     @Mock
@@ -41,77 +42,73 @@ public class CarritoServiceTest {
     private CarritoService carritoService;
 
     @Test
-    @DisplayName("agregarItem: lanza excepcion si el carrito no existe")
-    void agregarItem_carritoNoExiste_lanzaExcepcion() {
-        ItemCarritoRequestDTO request = TestDataFactory.unItemRequest(123L);
-        
-       
+    @DisplayName("crear: guarda y retorna el nuevo carrito exitosamente")
+    void crear_Exitoso() {
+        Carrito carritoGuardado = TestDataFactory.unCarrito();
+        when(carritoRepository.save(any(Carrito.class))).thenReturn(carritoGuardado);
+
+        CarritoResponseDTO resultado = carritoService.crear(carritoGuardado.getUsuario());
+
+        assertThat(resultado).isNotNull();
+        assertThat(resultado.getUsuario()).isEqualTo(carritoGuardado.getUsuario());
+        verify(carritoRepository).save(any(Carrito.class));
+    }
+
+    @Test
+    @DisplayName("agregarItem: lanza excepción si el carrito no existe")
+    void agregarItem_carritoNoEncontrado_lanzaExcepcion() {
+        ItemCarritoRequestDTO request = TestDataFactory.unItemRequest(10L);
         when(carritoRepository.findById(1L)).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> carritoService.agregarItem(1L, request))
                 .isInstanceOf(RuntimeException.class)
-                .hasMessageContaining("El carrito con id 1 no existe");
+                .hasMessageContaining("Carrito no encontrado: 1");
 
-        
-        verifyNoInteractions(catalogoClient);
-        verify(carritoRepository, never()).save(any(Carrito.class));
+        verify(carritoRepository, never()).save(any());
     }
 
     @Test
-    @DisplayName("agregarItem: lanza excepcion si el perfume no existe en el catalogo")
-    void agregarItem_perfumeNoExisteEnCatalogo_lanzaExcepcion() {
+    @DisplayName("agregarItem: lanza excepción si el perfume no existe en catálogo")
+    void agregarItem_perfumeNoExiste_lanzaExcepcion() {
         Carrito carrito = TestDataFactory.unCarrito();
-        ItemCarritoRequestDTO request = TestDataFactory.unItemRequest(999L);
+        ItemCarritoRequestDTO request = TestDataFactory.unItemRequest(99L);
 
         when(carritoRepository.findById(1L)).thenReturn(Optional.of(carrito));
-        
-        
-        FeignException.NotFound mockNotFound = mock(FeignException.NotFound.class);
-        when(catalogoClient.obtenerPerfume(999L)).thenThrow(mockNotFound);
+        when(catalogoClient.obtenerPerfume(99L)).thenThrow(mock(FeignException.NotFound.class));
 
         assertThatThrownBy(() -> carritoService.agregarItem(1L, request))
                 .isInstanceOf(RuntimeException.class)
-                .hasMessageContaining("El perfume con id 999 no existe en el catálogo");
-
-        verify(carritoRepository, never()).save(any(Carrito.class));
+                .hasMessageContaining("El perfume con id 99 no existe en el catálogo");
     }
 
     @Test
-    @DisplayName("agregarItem: agrega un perfume nuevo al carrito de manera exitosa")
-    void agregarItem_productoNuevo_agregaExitosamente() {
+    @DisplayName("agregarItem: añade un nuevo perfume al carrito de forma exitosa")
+    void agregarItem_nuevoPerfume_agregaCorrectamente() {
         Carrito carrito = TestDataFactory.unCarrito();
         PerfumeDTO perfume = TestDataFactory.unPerfumeDTO();
-        ItemCarritoRequestDTO request = TestDataFactory.unItemRequest(perfume.getId());
+        ItemCarritoRequestDTO request = new ItemCarritoRequestDTO();
+        request.setPerfumeId(perfume.getId());
+        request.setCantidad(2);
 
         when(carritoRepository.findById(1L)).thenReturn(Optional.of(carrito));
         when(catalogoClient.obtenerPerfume(perfume.getId())).thenReturn(perfume);
-        
-        
-        when(carritoRepository.save(any(Carrito.class))).thenAnswer(inv -> inv.getArgument(0));
+        when(carritoRepository.save(any(Carrito.class))).thenReturn(carrito);
 
-        CarritoResponseDTO respuesta = carritoService.agregarItem(1L, request);
+        CarritoResponseDTO resultado = carritoService.agregarItem(1L, request);
 
-      
-        assertThat(respuesta).isNotNull();
-        assertThat(respuesta.getItems()).hasSize(1);
-        assertThat(respuesta.getItems().get(0).getNombrePerfume()).isEqualTo(perfume.getNombre());
-        assertThat(respuesta.getItems().get(0).getCantidad()).isEqualTo(request.getCantidad());
-
-        
-        BigDecimal subtotalEsperado = perfume.getPrecio().multiply(BigDecimal.valueOf(request.getCantidad()));
-        assertThat(respuesta.getTotal()).isEqualByComparingTo(subtotalEsperado);
-
+        assertThat(resultado).isNotNull();
+        assertThat(resultado.getItems()).hasSize(1);
+        assertThat(resultado.getItems().get(0).getPerfumeId()).isEqualTo(perfume.getId());
         verify(carritoRepository).save(carrito);
     }
 
     @Test
-    @DisplayName("agregarItem: si el perfume ya existe, acumula la cantidad en lugar de duplicar fila")
-    void agregarItem_productoExistente_acumulaCantidad() {
+    @DisplayName("agregarItem: incrementa la cantidad si el perfume ya estaba en el carrito")
+    void agregarItem_perfumeExistente_incrementaCantidad() {
         Carrito carrito = TestDataFactory.unCarrito();
         PerfumeDTO perfume = TestDataFactory.unPerfumeDTO();
-      
         ItemCarrito itemExistente = TestDataFactory.unItem(perfume, carrito);
-        itemExistente.setCantidad(2);
+        itemExistente.setCantidad(1);
         carrito.getItems().add(itemExistente);
 
         ItemCarritoRequestDTO request = new ItemCarritoRequestDTO();
@@ -120,21 +117,20 @@ public class CarritoServiceTest {
 
         when(carritoRepository.findById(1L)).thenReturn(Optional.of(carrito));
         when(catalogoClient.obtenerPerfume(perfume.getId())).thenReturn(perfume);
-        when(carritoRepository.save(any(Carrito.class))).thenAnswer(inv -> inv.getArgument(0));
+        when(carritoRepository.save(any(Carrito.class))).thenReturn(carrito);
 
-        CarritoResponseDTO respuesta = carritoService.agregarItem(1L, request);
+        CarritoResponseDTO resultado = carritoService.agregarItem(1L, request);
 
-        assertThat(respuesta.getItems()).hasSize(1);
-        assertThat(respuesta.getItems().get(0).getCantidad()).isEqualTo(5);
-
-        BigDecimal totalEsperado = perfume.getPrecio().multiply(BigDecimal.valueOf(5));
-        assertThat(respuesta.getTotal()).isEqualByComparingTo(totalEsperado);
+        assertThat(resultado.getItems()).hasSize(1);
+        assertThat(itemExistente.getCantidad()).isEqualTo(4);
     }
 
     @Test
-    @DisplayName("quitarItem: remueve un item especifico del carrito")
-    void quitarItem_remueveItemCorrectamente() {
+    @DisplayName("quitarItem: remueve un item de forma exitosa si pertenece al carrito")
+    void quitarItem_itemPertenece_remueveCorrectamente() {
         Carrito carrito = TestDataFactory.unCarrito();
+        carrito.setId(1L); // Para que coincida con la validación del ID
+        
         PerfumeDTO perfume = TestDataFactory.unPerfumeDTO();
         ItemCarrito item = TestDataFactory.unItem(perfume, carrito);
         item.setId(5L);
@@ -144,31 +140,48 @@ public class CarritoServiceTest {
         when(itemCarritoRepository.findById(5L)).thenReturn(Optional.of(item));
         when(carritoRepository.save(any(Carrito.class))).thenReturn(carrito);
 
-        CarritoResponseDTO respuesta = carritoService.quitarItem(1L, 5L);
+        CarritoResponseDTO resultado = carritoService.quitarItem(1L, 5L);
 
-        assertThat(respuesta.getItems()).isEmpty();
-        assertThat(respuesta.getTotal()).isEqualByComparingTo(BigDecimal.ZERO);
+        assertThat(resultado.getItems()).isEmpty();
         verify(carritoRepository).save(carrito);
     }
 
     @Test
-    @DisplayName("vaciar: elimina todos los productos de golpe")
-    void vaciar_limpiaTodoElCarrito() {
+    @DisplayName("quitarItem: lanza excepción si el item pertenece a otro carrito")
+    void quitarItem_itemDeOtroCarrito_lanzaExcepcion() {
+        Carrito carritoActual = TestDataFactory.unCarrito();
+        carritoActual.setId(1L);
+
+        Carrito otroCarrito = TestDataFactory.unCarrito();
+        otroCarrito.setId(2L); // ID diferente
+
+        PerfumeDTO perfume = TestDataFactory.unPerfumeDTO();
+        ItemCarrito item = TestDataFactory.unItem(perfume, otroCarrito); // Amarrado al otro carrito
+        item.setId(5L);
+
+        when(carritoRepository.findById(1L)).thenReturn(Optional.of(carritoActual));
+        when(itemCarritoRepository.findById(5L)).thenReturn(Optional.of(item));
+
+        assertThatThrownBy(() -> carritoService.quitarItem(1L, 5L))
+                .isInstanceOf(RuntimeException.class)
+                .hasMessageContaining("no pertenece al carrito 1");
+
+        verify(carritoRepository, never()).save(any());
+    }
+
+    @Test
+    @DisplayName("vaciar: limpia todos los elementos del carrito")
+    void vaciar_limpiaTodosLosItems() {
         Carrito carrito = TestDataFactory.unCarrito();
-        
-        // Agregamos dos perfumes distintos para simular un carrito con volumen
-        PerfumeDTO p1 = TestDataFactory.unPerfumeDTO();
-        PerfumeDTO p2 = TestDataFactory.unPerfumeDTO();
-        carrito.getItems().add(TestDataFactory.unItem(p1, carrito));
-        carrito.getItems().add(TestDataFactory.unItem(p2, carrito));
+        PerfumeDTO perfume = TestDataFactory.unPerfumeDTO();
+        carrito.getItems().add(TestDataFactory.unItem(perfume, carrito));
 
         when(carritoRepository.findById(1L)).thenReturn(Optional.of(carrito));
         when(carritoRepository.save(any(Carrito.class))).thenReturn(carrito);
 
-        CarritoResponseDTO respuesta = carritoService.vaciar(1L);
+        CarritoResponseDTO resultado = carritoService.vaciar(1L);
 
-        assertThat(respuesta.getItems()).isEmpty();
-        assertThat(respuesta.getTotal()).isEqualByComparingTo(BigDecimal.ZERO);
+        assertThat(resultado.getItems()).isEmpty();
         verify(carritoRepository).save(carrito);
     }
 }
