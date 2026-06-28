@@ -24,7 +24,12 @@ spring:
           uri: http://localhost:8083
           predicates:
             - Path=/api/perfumes/**
-
+        
+        # favoritosdb → puerto 8086
+        - id: favorito-route
+          uri: http://localhost:8086
+          predicates:
+            - Path=/api/favoritos/**
 
         
 
