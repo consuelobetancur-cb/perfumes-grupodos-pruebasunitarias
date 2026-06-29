@@ -1,13 +1,18 @@
 package com.grupodos.perfumes;
 
 import static org.assertj.core.api.Assertions.assertThat;
-
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.Optional;
 
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.RepeatedTest;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -33,6 +38,15 @@ class PerfumeServiceFakerTest {
 
     @InjectMocks
     private PerfumeService perfumeService;
+
+    private Categoria cat1;
+    private Categoria cat2;
+
+    @BeforeEach
+    void setUp() {
+        cat1 = new Categoria(1L, "Floral", "Femenino");
+        cat2 = new Categoria(2L, "Amaderado", "Masculino");
+    }
 
     @Test
     void obtenerPorId_cuandoPerfumeExiste_devuelveDTO() {
@@ -62,6 +76,30 @@ class PerfumeServiceFakerTest {
         assertThat(resultado.getNombre()).isNotBlank();
         assertThat(resultado.getPrecio()).isPositive();
         assertThat(resultado.getStock()).isPositive();
+    }
+
+   @Test
+    void actualizar_cuandoLaCategoriaEsDiferente_deberiaActualizarTodo() {
+        Long perfumeId = 1L;
+        Long nuevaCategoriaId = 2L;
+        
+        Perfume perfumeExistente = new Perfume(perfumeId, "Original", "Marca", BigDecimal.TEN, 10, cat1);
+        PerfumeRequestDTO dto = new PerfumeRequestDTO("Nuevo Nombre", "Nueva Marca", new BigDecimal("20.00"), 5, nuevaCategoriaId);
+        
+        when(perfumeRepository.findById(perfumeId)).thenReturn(Optional.of(perfumeExistente));
+        when(categoriaRepository.findById(nuevaCategoriaId)).thenReturn(Optional.of(cat2));
+        when(perfumeRepository.save(any(Perfume.class))).thenAnswer(i -> i.getArguments()[0]);
+
+        // 2. Act (Ejecutar)
+        PerfumeResponseDTO resultado = perfumeService.actualizar(perfumeId, dto);
+
+        assertNotNull(resultado);
+        assertEquals("Nuevo Nombre", resultado.getNombre());
+        assertEquals("Amaderado", resultado.getCategoriaNombre()); 
+
+        verify(perfumeRepository, times(1)).findById(perfumeId);
+        verify(categoriaRepository, times(1)).findById(nuevaCategoriaId);
+        verify(perfumeRepository, times(1)).save(any(Perfume.class));
     }
 
     @Test

@@ -43,14 +43,15 @@ public class PerfumeService {
    
     @Transactional
     public PerfumeResponseDTO actualizar(Long id, PerfumeRequestDTO dto) {
-
+        log.info("Actualizando perfume ID: {}", id);
+        
         Perfume perfume = perfumerepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Perfume no encontrado con ID: " + id));
+
         perfume.setNombre(dto.getNombre());
         perfume.setMarca(dto.getMarca());
         perfume.setPrecio(dto.getPrecio());
         perfume.setStock(dto.getStock());
-
 
         if (!perfume.getCategoria().getId().equals(dto.getCategoriaId())) {
             Categoria nuevaCategoria = categoriarepository.findById(dto.getCategoriaId())
