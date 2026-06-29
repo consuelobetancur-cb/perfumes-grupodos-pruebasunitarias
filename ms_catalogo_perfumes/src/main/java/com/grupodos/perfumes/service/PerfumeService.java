@@ -12,6 +12,7 @@ import com.grupodos.perfumes.model.Perfume;
 import com.grupodos.perfumes.repository.CategoriaRepository;
 import com.grupodos.perfumes.repository.PerfumeRepository;
 
+import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
@@ -39,12 +40,33 @@ public class PerfumeService {
         return mapToDTO(perfumerepository.save(perfume));
     }
 
+   
+    @Transactional
+    public PerfumeResponseDTO actualizar(Long id, PerfumeRequestDTO dto) {
+
+        Perfume perfume = perfumerepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Perfume no encontrado con ID: " + id));
+        perfume.setNombre(dto.getNombre());
+        perfume.setMarca(dto.getMarca());
+        perfume.setPrecio(dto.getPrecio());
+        perfume.setStock(dto.getStock());
+
+
+        if (!perfume.getCategoria().getId().equals(dto.getCategoriaId())) {
+            Categoria nuevaCategoria = categoriarepository.findById(dto.getCategoriaId())
+                    .orElseThrow(() -> new RuntimeException("Nueva categoría no encontrada: " + dto.getCategoriaId()));
+            perfume.setCategoria(nuevaCategoria);
+        }
+
+        return mapToDTO(perfumerepository.save(perfume));
+    }
+
     public void eliminar(Long id) {
         perfumerepository.deleteById(id);
     }
 
    private PerfumeResponseDTO mapToDTO(Perfume l) {
-    // Si la categoría existe, obtenemos el género, sino enviamos un valor por defecto
+
     String genero = (l.getCategoria() != null) ? l.getCategoria().getGenero() : "N/A";
     
     return new PerfumeResponseDTO(
