@@ -25,13 +25,49 @@ spring:
           predicates:
             - Path=/api/perfumes/**
         
+        # usuarios_db → puerto 8084
+        - id: usuario-route
+          uri: http://localhost:8084
+          predicates:
+            - Path=/api/usuarios/**
+
+        # pagos_db → puerto 8085
+        - id: pagos-route
+          uri: http://localhost:8085
+          predicates:
+            - Path=/api/pagos/**
+
         # favoritosdb → puerto 8086
         - id: favorito-route
           uri: http://localhost:8086
           predicates:
             - Path=/api/favoritos/**
-
         
+        # inventario_db → puerto 8087
+        - id: inventario-route
+          uri: http://localhost:8087
+          predicates:
+            - Path=/api/inventario/**
+
+        # bd_envios → puerto 8088
+        - id: envio-route
+          uri: http://localhost:8087
+          predicates:
+            - Path=/api/envios/**
+        
+        # bd_promociones → puerto 8089
+        - id: promocion-route
+          uri: http://localhost:8089
+          predicates:
+            - Path=/api/promociones/**
+        
+        # resenas_db → puerto 8090
+        - id: resena-route
+          uri: http://localhost:8090
+          predicates:
+            - Path=/api/resenas/**
+        
+
 
 
 server:
