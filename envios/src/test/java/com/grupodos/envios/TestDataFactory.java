@@ -7,7 +7,7 @@ import java.util.Locale;
 
 public class TestDataFactory {
 
-    // Usamos el locale en español para que genere direcciones más reales si se quiere
+    
     private static final Faker faker = new Faker(new Locale("es"));
 
     public static Envio unEnvioMetropolitana() {
@@ -25,7 +25,7 @@ public class TestDataFactory {
         Envio envio = new Envio();
         envio.setId(null);
         envio.setPedidoId(faker.number().randomDigitNotZero() * 100L);
-        // Evitamos "Metropolitana" para forzar el flujo alternativo del servicio
+        
         envio.setRegion(faker.options().option("Valparaíso", "Biobío", "Araucanía", "Antofagasta"));
         envio.setDireccion(faker.address().streetAddress());
         envio.setCostoEnvio(null);
