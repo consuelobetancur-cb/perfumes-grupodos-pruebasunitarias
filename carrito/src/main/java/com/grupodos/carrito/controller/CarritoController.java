@@ -8,7 +8,9 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/carritos")
@@ -19,8 +21,15 @@ public class CarritoController {
 
     // POST http://localhost:8081/api/carritos?usuario=Andres
     @PostMapping
-    public ResponseEntity<CarritoResponseDTO> crear(@RequestParam String usuario) {
-        return ResponseEntity.status(201).body(carritoService.crear(usuario));
+    public ResponseEntity<Map<String, Object>> crear(@RequestParam String usuario) {
+        CarritoResponseDTO nuevoCarrito = carritoService.crear(usuario);
+        
+        // Creamos la respuesta personalizada en JSON
+        Map<String, Object> respuesta = new HashMap<>();
+        respuesta.put("mensaje", "Carrito creado exitosamente");
+        respuesta.put("carrito", nuevoCarrito);
+        
+        return ResponseEntity.status(201).body(respuesta);
     }
 
     // GET http://localhost:8081/api/carritos/1
@@ -58,9 +67,17 @@ public class CarritoController {
 
     // DELETE http://localhost:8081/api/carritos/1
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> eliminar(@PathVariable Long id) {
-        if (carritoService.obtenerPorId(id).isEmpty()) return ResponseEntity.notFound().build();
+    public ResponseEntity<Map<String, String>> eliminar(@PathVariable Long id) {
+        if (carritoService.obtenerPorId(id).isEmpty()) {
+            return ResponseEntity.notFound().build();
+        }
+        
         carritoService.eliminar(id);
-        return ResponseEntity.noContent().build();
+        
+        // Creamos la respuesta personalizada en JSON
+        Map<String, String> respuesta = new HashMap<>();
+        respuesta.put("mensaje", "Carrito borrado correctamente");
+        
+        return ResponseEntity.ok(respuesta);
     }
 }
